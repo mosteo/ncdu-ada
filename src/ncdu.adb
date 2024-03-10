@@ -4,8 +4,6 @@ package body Ncdu is
 
    package Adirs renames Ada.Directories;
 
-   use type Adirs.File_Size;
-
    Current_Sorting : Sorting := Is_Larger'Access;
 
    ---------
@@ -20,7 +18,10 @@ package body Ncdu is
    ---------------
 
    function Is_Larger (This, Than : Item) return Boolean
-   is (This.Size > Than.Size);
+   is (This.Tree_Size > Than.Tree_Size
+       or else
+         (This.Tree_Size = Than.Tree_Size
+          and then This.Path < Than.Path));
 
    ----------
    -- List --
@@ -56,10 +57,7 @@ package body Ncdu is
                   if Kind (Item) = Directory then
                      Children := List_Internal (Adirs.Full_Name (Item));
                      for Child of Children loop
-                        Children_Size :=
-                          Children_Size
-                          + Child.Element.Size
-                          + Child.Element.Children_Size;
+                        Children_Size := Children_Size + Child.Tree_Size;
                      end loop;
                   end if;
 
@@ -94,7 +92,7 @@ package body Ncdu is
             Size     : Sizes := 0;
          begin
             for Child of Children loop
-               Size := Size + Child.Element.Size + Child.Element.Children_Size;
+               Size := Size + Child.Tree_Size;
             end loop;
 
             Root.Insert

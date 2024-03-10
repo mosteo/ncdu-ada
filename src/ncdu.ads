@@ -31,7 +31,11 @@ package Ncdu is
       Children      : Tree;
    end record;
 
-   function Element (Base : Base_Item'Class) return Item is (Item (Base));
+   function Element (Base : Base_Item'Class) return Item is (Item (Base))
+     with Inline;
+
+   function Tree_Size (Base : Base_Item'Class) return Sizes;
+   --  The full size of all children plus the item itself
 
    type Sorting is access function (This, Than : Item) return Boolean;
 
@@ -44,5 +48,16 @@ package Ncdu is
 
    procedure Print (This : Tree);
    --  Basic dump for debugging purposes mostly
+
+private
+
+   use type Sizes;
+
+   ---------------
+   -- Tree_Size --
+   ---------------
+
+   function Tree_Size (Base : Base_Item'Class) return Sizes
+   is (Base.Element.Size + Base.Element.Children_Size);
 
 end Ncdu;
