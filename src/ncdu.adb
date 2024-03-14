@@ -27,8 +27,9 @@ package body Ncdu is
    -- List --
    ----------
 
-   function List (Path : Paths;
-                  Sort : Sorting := Is_Larger'Access)
+   function List (Path     : Paths;
+                  Sort     : Sorting := Is_Larger'Access;
+                  Progress : access procedure (Exploring : String) := null)
                   return Tree
    is
       use all type Adirs.File_Kind;
@@ -39,6 +40,10 @@ package body Ncdu is
 
       function List_Internal (Path : Paths) return Tree is
       begin
+         if Progress /= null then
+            Progress (Path);
+         end if;
+
          return Result : Tree do
             declare
 

@@ -41,8 +41,9 @@ package Ncdu is
 
    function Is_Larger (This, Than : Item) return Boolean;
 
-   function List (Path : Paths;
-                  Sort : Sorting := Is_Larger'Access)
+   function List (Path     : Paths;
+                  Sort     : Sorting := Is_Larger'Access;
+                  Progress : access procedure (Exploring : String) := null)
                   return Tree;
    --  Default size is by decreasing size, alphabetical if same size
 
