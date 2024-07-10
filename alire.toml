@@ -8,3 +8,11 @@ maintainers-logins = ["mosteo"]
 licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
 website = ""
 tags = ["directory", "folder", "size"]
+
+[[depends-on]]
+den = "~0.1"
+
+[[pins]]
+[pins.den]
+url    = "https://github.com/mosteo/den"
+commit = "28fb91bd46695c49822adab0cac51a31e86cda68"

@@ -1,3 +1,5 @@
+with Den.Iterators;
+
 with GNAT.IO;
 
 package body Ncdu is
@@ -32,35 +34,28 @@ package body Ncdu is
                   Progress : access procedure (Exploring : String) := null)
                   return Tree
    is
-      use all type Adirs.File_Kind;
+      use all type Den.Kinds;
 
       -------------------
       -- List_Internal --
       -------------------
 
-      function List_Internal (Path : Paths) return Tree is
+      function List_Internal (Path : Den.Path) return Tree is
       begin
          if Progress /= null then
             Progress (Path);
          end if;
 
          return Result : Tree do
-            declare
-
-               ---------------
-               -- List_Item --
-               ---------------
-
-               procedure List_Item (Item : Adirs.Directory_Entry_Type) is
+            for Name of Den.Iterators.Iterate (Path) loop
+               declare
+                  use Den.Operators;
+                  Child         : constant Den.Path := Path / Name;
                   Children      : Tree;
                   Children_Size : Sizes := 0;
                begin
-                  if Adirs.Simple_Name (Item) in "." | ".." then
-                     return;
-                  end if;
-
-                  if Kind (Item) = Directory then
-                     Children := List_Internal (Adirs.Full_Name (Item));
+                  if Kind (Child) = Directory then
+                     Children := List_Internal (Child);
                      for Child of Children loop
                         Children_Size := Children_Size + Child.Tree_Size;
                      end loop;
@@ -68,32 +63,33 @@ package body Ncdu is
 
                   Result.Insert
                     (Ncdu.Item'
-                       (Path_Length   => Adirs.Full_Name (Item)'Length,
-                        Kind          => Adirs.Kind (Item),
-                        Path          => Adirs.Full_Name (Item),
-                        Size          => Adirs.Size (Item),
+                       (Path_Length   => Child'Length,
+                        Kind          => Den.Kind (Child),
+                        Path          => Child,
+                        Size          =>
+                          (case Den.Kind (Child) is
+                              when File      => Adirs.Size (Child),
+                              when Softlink  =>
+                                Sizes (Den.Target_Length (Child)),
+                              when others    => 0),
                         Children_Size => Children_Size,
                         Children      => Children));
-               end List_Item;
-
-            begin
-               Adirs.Search (Path,
-                             Pattern => "",
-                             Process => List_Item'Access);
-            end;
+               end;
+            end loop;
          end return;
       end List_Internal;
 
+      Clean_Path : constant Den.Path := Den.Scrub (Path);
    begin
       Current_Sorting := Sort;
 
       return Root : Tree do
-         if not Adirs.Exists (Path) then
+         if Den.Kind (Clean_Path) not in Directory then
             return;
          end if;
 
          declare
-            Children : constant Tree := List_Internal (Path);
+            Children : constant Tree := List_Internal (Clean_Path);
             Size     : Sizes := 0;
          begin
             for Child of Children loop
@@ -102,12 +98,15 @@ package body Ncdu is
 
             Root.Insert
               (Item'
-                 (Path_Length   => Adirs.Full_Name (Path)'Length,
-                  Kind          => Adirs.Kind (Path),
-                  Path          => Adirs.Full_Name (Path),
-                  Size          => (if Adirs.Kind (Path) = Directory
-                                    then 0
-                                    else Adirs.Size (Path)),
+                 (Path_Length   => Clean_Path'Length,
+                  Kind          => Den.Kind (Clean_Path),
+                  Path          => Clean_Path,
+                  Size          =>
+                    (case Den.Kind (Clean_Path) is
+                        when File      => Adirs.Size (Clean_Path),
+                        when Softlink  =>
+                          Sizes (Den.Target_Length (Clean_Path)),
+                        when others    => 0),
                   Children_Size => Size,
                   Children      => Children));
          end;

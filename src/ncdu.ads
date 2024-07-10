@@ -1,12 +1,14 @@
 with Ada.Containers.Indefinite_Ordered_Multisets;
 with Ada.Directories;
 
+with Den;
+
 generic
    --  Since ordering is stored in a package-global function pointer, by making
    --  the library generic we avoid any concurrency troubles
 package Ncdu is
 
-   subtype Kinds is Ada.Directories.File_Kind;
+   subtype Kinds is Den.Kinds;
 
    subtype Paths is String; -- Platform-specific-encoded path
 
